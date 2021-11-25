@@ -228,15 +228,11 @@ pub unsafe extern "C" fn JEncoding_get_ids(a: *mut JEncoding, buffer: *mut i64, 
 
     let encodings = &*a;
     let len =  encodings.get_length();
-    let vector = encodings.get_ids();
+    let vector: Vec<i64>  = encodings.get_ids().into_iter().map(i64::from).rev().collect();
     println!("I was called in rust. tokenizer: {:?} {:?}", sizeBuffer, len);
     println!("I was called in rust. ids: {:?} ", vector);
     assert_eq!(sizeBuffer, len);
-    for item in vector {
-        let converted = i64::from(item);
-        println!("I was called in rust. converted: {:?} ", converted);
-        buffer.write(converted)
-    }
+    buffer.copy_from(vector.as_ptr(), sizeBuffer);
 }
 
 // #[no_mangle]

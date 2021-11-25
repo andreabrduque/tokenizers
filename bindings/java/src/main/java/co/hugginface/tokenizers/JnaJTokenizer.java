@@ -1,6 +1,7 @@
 package co.hugginface.tokenizers;
 
 import com.sun.jna.*;
+import com.sun.jna.ptr.PointerByReference;
 
 import java.util.Arrays;
 import java.util.List;
@@ -56,7 +57,6 @@ public interface JnaJTokenizer extends Library {
             return length;
 
         }
-        //return Array of IDs
         public List<Long> getIds() {
             size_t idsSize = getLength();
             int isSizeInt = idsSize.intValue();
