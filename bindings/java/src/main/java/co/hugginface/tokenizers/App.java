@@ -20,6 +20,5 @@ public class App {
         List<Long> idsFromList = tokenizer.encode(list);
         System.out.println(String.format("ids from java str: %s", Arrays.toString(ids.toArray())));
         System.out.println(String.format("ids from java list: %s", Arrays.toString(idsFromList.toArray())));
-        tokenizer.close();
     }
 }

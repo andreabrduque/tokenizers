@@ -62,7 +62,6 @@ public interface JnaJTokenizer extends Library {
             Pointer pEncodings = INSTANCE.JTokenizer_encode_from_vec_str(p, parray, new size_t(values.size()));
             JEncoding encoding = new JEncoding(pEncodings);
             List<Long> ids = encoding.getIds();
-            encoding.close();
             return ids;
         }
     }
