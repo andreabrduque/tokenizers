@@ -202,8 +202,20 @@ pub unsafe extern "C" fn JTokenizer_encode_from_str(tokenizer: *mut JTokenizer, 
     let inputSequence = JInputSequence::from_str(cstr);
     let encodings =  Box::new(instance.encode(&inputSequence));
     return Box::into_raw(encodings);
-    //println!("my tokens {:?}", e.get_tokens());
-    //return e.get_ids().clone();
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn JTokenizer_encode_from_vec_str(tokenizer: *mut JTokenizer, input: *mut *const c_char, len: size_t) -> *mut JEncoding  {
+    let instance = &*tokenizer;
+    let slice = unsafe { slice::from_raw_parts(input, len) };
+    let mut v = vec![];
+    for elem in slice {
+        let s = CStr::from_ptr(*elem).to_string_lossy().to_string();
+        v.push(s)
+    }
+    let inputs = JInputSequence::from_vec_str(v);
+    let encodings =  Box::new(instance.encode(&inputs));
+    return Box::into_raw(encodings);
 }
 
 #[no_mangle]
@@ -228,15 +240,11 @@ pub unsafe extern "C" fn JEncoding_get_ids(a: *mut JEncoding, buffer: *mut i64, 
 
     let encodings = &*a;
     let len =  encodings.get_length();
-    let vector = encodings.get_ids();
+    let vector: Vec<i64>  = encodings.get_ids().into_iter().map(i64::from).rev().collect();
     println!("I was called in rust. tokenizer: {:?} {:?}", sizeBuffer, len);
     println!("I was called in rust. ids: {:?} ", vector);
     assert_eq!(sizeBuffer, len);
-    for item in vector {
-        let converted = i64::from(item);
-        println!("I was called in rust. converted: {:?} ", converted);
-        buffer.write(converted)
-    }
+    buffer.copy_from(vector.as_ptr(), sizeBuffer);
 }
 
 // #[no_mangle]
