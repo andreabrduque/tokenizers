@@ -27,10 +27,22 @@ public interface JnaJTokenizer extends Library {
             Pointer p = this.getPointer();
             INSTANCE.JTokenizer_print_tokenizer(p);
         }
-        //overloading with different types
-        public List<Long> encodeFromStr(String value){
+        public List<Long> encode(String value){
             Pointer p = this.getPointer();
             Pointer pEncodings = INSTANCE.JTokenizer_encode_from_str(p, value);
+            JEncoding encoding = new JEncoding(pEncodings);
+            List<Long> ids = encoding.getIds();
+            encoding.close();
+            return ids;
+        }
+
+        //overloading with different types
+        public List<Long> encode(List<String> values){
+            StringArray sarray = new StringArray(values.toArray(new String[0]));
+            PointerByReference parray = new PointerByReference();
+            parray.setPointer(sarray);
+            Pointer p = this.getPointer();
+            Pointer pEncodings = INSTANCE.JTokenizer_encode_from_vec_str(p, parray, new size_t(values.size()));
             JEncoding encoding = new JEncoding(pEncodings);
             List<Long> ids = encoding.getIds();
             encoding.close();
@@ -40,7 +52,6 @@ public interface JnaJTokenizer extends Library {
 
 
     //the encoding IDS are unsigned, but I think this isnt java supported
-
     public static class size_t extends IntegerType {
         public size_t() { this(0); }
         public size_t(long value) { super(Native.SIZE_T_SIZE, value); }
@@ -88,6 +99,7 @@ public interface JnaJTokenizer extends Library {
     void JTokenizer_drop(Pointer tokenizer);
     Pointer JTokenizer_encode_from_str(Pointer tokenizer, String input);
     void JTokenizer_print_tokenizer(Pointer tokenizer);
+    Pointer JTokenizer_encode_from_vec_str(Pointer tokenizer, PointerByReference parray, size_t sizeArray);
     void JEncoding_drop(Pointer tokenizer);
     size_t JEncoding_get_length(Pointer encoding);
     void JEncoding_get_ids(Pointer encoding, Pointer buffer, size_t sizeBuffer);
