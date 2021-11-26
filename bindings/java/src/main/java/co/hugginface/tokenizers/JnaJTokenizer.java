@@ -53,6 +53,14 @@ public interface JnaJTokenizer extends Library {
             return ids;
         }
 
+        public List<Integer> encode_word_ids(String value) {
+            Pointer p = this.getPointer();
+            Pointer pEncodings = INSTANCE.JTokenizer_encode_from_str(p, value);
+            JEncoding encoding = new JEncoding(pEncodings);
+            List<Integer> ids = encoding.getTypeIds();
+            return ids;
+        }
+
         //overloading with different types
         public List<Long> encode(List<String> values){
             StringArray sarray = new StringArray(values.toArray(new String[0]));
@@ -110,6 +118,16 @@ public interface JnaJTokenizer extends Library {
             return Arrays.stream(ids).boxed().collect(Collectors.toList());
         }
 
+        public List<Integer> getTypeIds() {
+            size_t length = getLength();
+            int isSizeInt = length.intValue();
+            Pointer buffer = new Memory((int) isSizeInt * Native.getNativeSize(int.class));
+            Pointer encoding = this.getPointer();
+            INSTANCE.JEncoding_get_type_ids(encoding,buffer, length);
+            int[] typeIds = buffer.getIntArray(0,isSizeInt);
+            return Arrays.stream(typeIds).boxed().collect(Collectors.toList());
+        }
+
 //        public void printTokenizer(){
 //            Pointer p = this.getPointer();
 //            INSTANCE.JTokenizer_print_tokenizer(p);
@@ -132,6 +150,5 @@ public interface JnaJTokenizer extends Library {
     void JEncoding_drop(Pointer tokenizer);
     size_t JEncoding_get_length(Pointer encoding);
     void JEncoding_get_ids(Pointer encoding, Pointer buffer, size_t sizeBuffer);
-
-
+    void JEncoding_get_type_ids(Pointer encoding, Pointer buffer, size_t sizeBuffer);
 }
