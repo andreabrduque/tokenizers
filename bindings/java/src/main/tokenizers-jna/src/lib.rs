@@ -4,7 +4,7 @@ extern crate tokenizers as tk;
 use std::borrow::Borrow;
 use std::ffi::CString;
 use std::ffi::CStr;
-use std::{fmt, u32};
+use std::u32;
 use std::os::raw::c_char;
 use std::ptr::null_mut;
 
@@ -237,7 +237,6 @@ pub unsafe extern "C" fn JEncoding_get_length(a: *mut JEncoding) -> size_t {
 
 #[no_mangle]
 pub unsafe extern "C" fn JEncoding_get_ids(a: *mut JEncoding, buffer: *mut i64, sizeBuffer: size_t)   {
-
     let encodings = &*a;
     let len =  encodings.get_length();
     let vector: Vec<i64>  = encodings.get_ids().into_iter().map(i64::from).rev().collect();
@@ -247,24 +246,27 @@ pub unsafe extern "C" fn JEncoding_get_ids(a: *mut JEncoding, buffer: *mut i64, 
     buffer.copy_from(vector.as_ptr(), sizeBuffer);
 }
 
+#[no_mangle]
+pub unsafe extern "C" fn JEncoding_get_type_ids(encoding_ptr: *mut JEncoding, buffer: *mut i32, buffer_size: size_t) {
+    // preconditions
+    let encoding = (&*encoding_ptr).encoding.as_ref().expect("null encoding");
+    let type_ids = encoding.get_type_ids();
+    let length = type_ids.len();
+    assert_eq!(length, buffer_size);
+    let ffi_type_ids: Vec<i32> = type_ids.into_iter().map(|i| *i as i32).rev().collect();
+    println!("I was called in rust. type_ids: {:?} ", type_ids);
+    buffer.copy_from(ffi_type_ids.as_ptr(), length);
+}
+
 // #[no_mangle]
-// pub unsafe extern "C" fn get_ids(a: *mut JEncoding) {
-//     let a = &*a;
-//     a.print_tokenizer();
+// pub unsafe extern "C" fn JEncoding_get_word_ids(encoding_ptr: *mut JEncoding, buffer: *mut i32, buffer_size: size_t) {
+//     // preconditions
+//     let encoding = (&*encoding_ptr).encoding.as_ref().expect("null encoding");
+//     let word_ids = encoding.get_word_ids();
+//     let encoding_length = encoding.get_length();
+//     assert_eq!(buffer_size, encoding_length);
+//     let ffi_word_ids = word_ids.iter().map(|w| i32::from(w.unwrap_or(-1))).collect();
+//     buffer.copy_from(ffi_word_ids.as_ptr, encoding_length);
 // }
-//
-//
 
-
-
-
-// pub fn print_string(my_string: &str) {
-//     println!("ccz {:?}", my_string);
-// }
-//
-// #[no_mangle]
-// pub extern "C" fn rust_function(value: *mut c_char) {
-//     let cstr = unsafe { CString::from_raw(value).to_string_lossy().to_string() };
-//     let reference = &cstr;
-//     print_string(reference);
-// }
+// TODO get_tokens
