@@ -11,7 +11,8 @@ import java.util.stream.Collectors;
 
 public interface JnaJTokenizer extends Library {
 
-    JnaJTokenizer INSTANCE = (JnaJTokenizer) Native.load("/Users/nguyen/src/tokenizers/bindings/java/src/main/tokenizers-jna/target/debug/libtokenizers_jna.dylib", JnaJTokenizer.class);
+    JnaJTokenizer INSTANCE = (JnaJTokenizer) Native.load("tokenizers_jna", JnaJTokenizer.class);
+
 
     // to automatically free memory on the Rust side when GC'ed on JVM
     static final Cleaner cleaner = Cleaner.create();

@@ -7,9 +7,47 @@ plugins {
 group 'co.huggingface'
 version '1.0-SNAPSHOT'
 
-
 repositories {
     mavenCentral()
+}
+
+def moveTarget(String os) {
+   def buildDir = "${project.buildDir}/classes/java/main/${os}-x86-64"
+   file(buildDir).mkdirs()
+
+   def targetDir = "${project.projectDir}/src/main/tokenizers-jna/target/debug"
+   def tree = fileTree(targetDir)
+
+   tree.include("libtokenizers_jna.*")
+
+   copy {
+       from tree.files
+
+       into buildDir
+   }
+}
+
+task buildProject(dependsOn: 'compileJava') {
+    doLast{
+     exec {
+            commandLine 'bash', 'build.sh'
+        }
+
+       def currentOs = System.properties['os.name']
+        if (currentOs.startsWith("Mac")) {
+            moveTarget("darwin")
+        }else if (currentOs.startsWith("Linux")){
+          moveTarget("linux")
+        }
+        else {
+            throw new IllegalStateException("Unsupported os: " + currentOs)
+        }
+    }
+
+}
+
+clean.doFirst {
+    delete "./src/main/tokenizers-jna/target"
 }
 
 dependencies {
