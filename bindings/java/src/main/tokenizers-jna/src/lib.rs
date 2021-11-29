@@ -1,25 +1,18 @@
 extern crate libc;
 extern crate tokenizers as tk;
 
-use std::borrow::Borrow;
 use std::ffi::CString;
 use std::ffi::CStr;
 use std::u32;
 use std::os::raw::c_char;
-use std::ptr::null_mut;
 
 use tk::tokenizer::EncodeInput;
 use tk::tokenizer::InputSequence;
-use tk::{Encoding, Tokenizer};
+use tk::Tokenizer;
 
-use libc::{boolean_t, size_t};
-use std::ops::Deref;
+use libc::size_t;
 use tk::FromPretrainedParameters;
-use std::mem::ManuallyDrop;
 use std::slice;
-
-//JInputSequence
-//JEncoding
 
 //from Vec<String>
 //from String
@@ -134,7 +127,6 @@ impl JTokenizer {
     pub fn print_tokenizer(&self) {
         match &self.tokenizer {
             Some(value) => {
-                let string = value.to_string(true);
                 println!("I was called in rust. tokenizer: {:?}", value);
             }
             None => {
@@ -143,44 +135,6 @@ impl JTokenizer {
         }
     }
 }
-
-// pub fn tokenize(&self) -> CEncodings {
-//     let input = EncodeInput::Single(InputSequence::Raw(Cow::from("Hellow")));
-//     let encodings = self.tokenizer.encode(input, false).unwrap();
-//     let ids = encodings.get_ids();
-//     CEncodings{ ids: ids.to_vec().clone()}
-//     //println!("doing a thing! also, number is {}!", self.number);
-// }
-
-//maybe inject handle pointer instead (PointerByReference in jna)
-// and return error code if allocation fails
-//assert pointer not null
-
-// #[no_mangle]
-// pub unsafe extern "C" fn JInputSequence_from_str(str: *const c_char) -> *mut JInputSequence<'static> {
-//     let cstr = unsafe { CStr::from_ptr(str).to_string_lossy().to_string() };
-//     let inputSequence = Box::new(JInputSequence::from_str(cstr));
-//     Box::into_raw(inputSequence)
-// }
-
-// #[no_mangle]
-// pub unsafe extern "C" fn JInputSequence_from_vec_str(vec: **const c_char, len: usize) -> *mut JInputSequence {
-//     let slice = unsafe { Vec::from_raw_parts(ptr, len, len) };
-//     let mut v = vec![];
-//
-//     for elem in slice {
-//         let s = CStr::from_ptr(elem).to_string_lossy().to_string();
-//         v.push(s)
-//     }
-//     let inputSequence = Box::new(JInputSequence::from_vec_str(v));
-//     Box::into_raw(inputSequence)
-// }
-
-// #[no_mangle]
-// pub unsafe extern "C" fn JInputSequence_drop(p: *mut JInputSequence) {
-//     Box::from_raw(p);
-// }
-//
 
 //TODO: assert not null in all the pointers
 #[no_mangle]
@@ -236,6 +190,21 @@ pub unsafe extern "C" fn JEncoding_get_length(a: *mut JEncoding) -> size_t {
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn JEncoding_get_max_token_length(a: *mut JEncoding) -> size_t {
+    let encodings = &*a;
+    let tokens: Vec<String> = encodings.get_tokens();
+    let max_token_length = tokens.iter().fold(0usize, |acc: usize, item: &String| {
+        if item.len() > acc {
+            item.len()
+        } else {
+            acc
+        }
+    });
+    return  max_token_length;
+}
+
+
+#[no_mangle]
 pub unsafe extern "C" fn JEncoding_get_ids(a: *mut JEncoding, buffer: *mut i64, sizeBuffer: size_t)   {
     let encodings = &*a;
     let len =  encodings.get_length();
@@ -258,15 +227,22 @@ pub unsafe extern "C" fn JEncoding_get_type_ids(encoding_ptr: *mut JEncoding, bu
     buffer.copy_from(ffi_type_ids.as_ptr(), length);
 }
 
-// #[no_mangle]
-// pub unsafe extern "C" fn JEncoding_get_word_ids(encoding_ptr: *mut JEncoding, buffer: *mut i32, buffer_size: size_t) {
-//     // preconditions
-//     let encoding = (&*encoding_ptr).encoding.as_ref().expect("null encoding");
-//     let word_ids = encoding.get_word_ids();
-//     let encoding_length = encoding.get_length();
-//     assert_eq!(buffer_size, encoding_length);
-//     let ffi_word_ids = word_ids.iter().map(|w| i32::from(w.unwrap_or(-1))).collect();
-//     buffer.copy_from(ffi_word_ids.as_ptr, encoding_length);
-// }
+#[no_mangle]
+pub unsafe extern "C" fn JEncoding_get_tokens(encoding_ptr: *mut JEncoding, buffer: *mut *mut c_char, buffer_size: size_t, max_str_size: size_t) {
+    // preconditions
+    let encodings = &*encoding_ptr;
+    let tokens: Vec<String> = encodings.get_tokens();
+    let length = encodings.get_length();
+    assert_eq!(length, buffer_size);
 
-// TODO get_tokens
+    let mut index = 0;
+    for elem in tokens {
+        println!("string len (without null): {:?} max string len: {:?}", elem.len(), max_str_size);
+        let cstring_size = elem.len() + 1;
+        let stri = CString::new(elem.into_bytes()).unwrap();
+        assert!(cstring_size <= max_str_size + 1);
+        let subbuffer  = *buffer.offset(index);
+        stri.as_ptr().copy_to(subbuffer, cstring_size);
+        index += 1;
+    }
+}

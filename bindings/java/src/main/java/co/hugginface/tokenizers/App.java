@@ -13,14 +13,19 @@ public class App {
         String identifier = "bert-base-uncased";
         JnaJTokenizer.JTokenizer tokenizer = new JnaJTokenizer.JTokenizer(identifier);
         String tokenizeMe = "I love Java";
-        List<Long> ids = tokenizer.encode(tokenizeMe);
+        JnaJTokenizer.JEncoding encodings = tokenizer.encode(tokenizeMe);
         List<String> list = new ArrayList<String>();
         list.add(tokenizeMe);
         list.add(tokenizeMe);
-        List<Long> idsFromList = tokenizer.encode(list);
-        List<Integer> foo = tokenizer.encode_word_ids(tokenizeMe);
-        System.out.println(String.format("ids from java str: %s", Arrays.toString(ids.toArray())));
-        System.out.println(String.format("ids from java list: %s", Arrays.toString(idsFromList.toArray())));
-        System.out.println(String.format("ids from java list: %s", Arrays.toString(foo.toArray())));
+        JnaJTokenizer.JEncoding encodingsFromList = tokenizer.encode(list);
+        //List<Integer> foo = tokenizer.encode_word_ids(tokenizeMe);
+        System.out.println(String.format("ids from java str: %s", encodings.getIds()));
+        System.out.println(String.format("ids from java list: %s", encodingsFromList.getIds()));
+        System.out.println(String.format("tokens from java str: %s", encodings.getTokens()));
+        System.out.println(String.format("tokens from java list: %s", encodingsFromList.getTokens()));
+
+        //System.out.println(String.format("ids from java list: %s", Arrays.toString(foo.toArray())));
+
+
     }
 }
